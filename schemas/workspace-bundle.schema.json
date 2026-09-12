@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://challenge-tree.local/schemas/workspace-bundle.schema.json",
+  "title": "Challenge Tree Workspace Bundle",
+  "description": "Portable export containing all learning trees and their answer history.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "appVersion", "schemaVersion", "connectorProtocolVersion", "settings", "workspaces"],
+  "properties": {
+    "formatVersion": { "type": "integer", "const": 2 },
+    "appVersion": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "connectorProtocolVersion": { "type": "string", "minLength": 1 },
+    "settings": { "$ref": "#/$defs/settings" },
+    "workspaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://challenge-tree.local/schemas/challenge-tree.schema.json" }
+    }
+  },
+  "$defs": {
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uiLanguage", "connectorUrl", "reducedMotion"],
+      "properties": {
+        "uiLanguage": { "type": "string", "enum": ["ja", "en"] },
+        "connectorUrl": { "type": "string", "format": "uri", "pattern": "^http://(?:127\\.0\\.0\\.1|localhost|\\[::1\\]):[0-9]+$" },
+        "reducedMotion": { "type": "boolean" },
+        "model": { "type": "string" },
+        "reasoningEffort": { "type": "string" }
+      }
+    }
+  }
+}

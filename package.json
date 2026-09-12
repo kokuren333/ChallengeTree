@@ -1,0 +1,30 @@
+{
+  "name": "challenge-tree",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:connector": "npm run build:connector:win",
+    "build:connector:win": "npx --yes pkg@5.8.1 connector/server.js --targets node18-win-x64 --output public/downloads/challenge-tree-connector-win-x64.exe",
+    "build:connector:mac-intel": "npx --yes pkg@5.8.1 connector/server.js --targets node18-macos-x64 --output public/downloads/challenge-tree-connector-macos-x64",
+    "build:connector:mac-arm": "npx --yes pkg@5.8.1 connector/server.js --targets node18-macos-arm64 --output public/downloads/challenge-tree-connector-macos-arm64",
+    "build:connector:linux": "npx --yes pkg@5.8.1 connector/server.js --targets node18-linux-x64 --output public/downloads/challenge-tree-connector-linux-x64",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "zod": "latest",
+    "vitest": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}

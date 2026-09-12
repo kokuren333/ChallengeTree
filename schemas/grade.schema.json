@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://challenge-tree.local/schemas/grade.schema.json",
+  "title": "Challenge Tree Grade",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "grade",
+    "summary",
+    "correct",
+    "missing",
+    "misconceptions",
+    "nuance",
+    "recommendedAction",
+    "recommendedNodeIds"
+  ],
+  "properties": {
+    "grade": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "correct": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "missing": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "misconceptions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "nuance": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "recommendedAction": {
+      "type": "string",
+      "enum": ["retry", "deepen", "repair", "branch"]
+    },
+    "recommendedNodeIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}

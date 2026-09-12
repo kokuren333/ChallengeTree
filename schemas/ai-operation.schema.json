@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://challenge-tree.local/schemas/ai-operation.schema.json",
+  "title": "Challenge Tree AI Operation Request",
+  "description": "The bounded, high-level operation envelope exchanged with the local connector.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation", "input"],
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": [
+        "TREE_PROPOSE",
+        "NODE_EXPAND",
+        "NODE_CREATE",
+        "CHALLENGE_CREATE",
+        "ANSWER_GRADE"
+      ]
+    },
+    "requestId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "protocolVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "input": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "operation": { "const": "TREE_PROPOSE" } } },
+      "then": { "properties": { "input": { "$ref": "#/$defs/treeProposeInput" } } }
+    },
+    {
+      "if": { "properties": { "operation": { "const": "NODE_EXPAND" } } },
+      "then": { "properties": { "input": { "$ref": "#/$defs/nodeExpandInput" } } }
+    },
+    {
+      "if": { "properties": { "operation": { "const": "CHALLENGE_CREATE" } } },
+      "then": { "properties": { "input": { "$ref": "#/$defs/challengeCreateInput" } } }
+    },
+    {
+      "if": { "properties": { "operation": { "const": "ANSWER_GRADE" } } },
+      "then": { "properties": { "input": { "$ref": "#/$defs/answerGradeInput" } } }
+    }
+  ],
+  "$defs": {
+    "treeProposeInput": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "topic": { "type": "string", "minLength": 1 },
+        "goal": { "type": "string", "minLength": 1 },
+        "researchMode": { "type": "string", "enum": ["ja", "global"] },
+        "priorKnowledge": {
+          "type": "string",
+          "enum": ["beginner", "intermediate", "advanced", "auto"]
+        }
+      }
+    },
+    "nodeExpandInput": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "currentNode": { "type": "object" },
+        "nearbyTreeContext": { "type": "object" },
+        "userGoal": { "type": "string" },
+        "masteryState": { "type": "string" },
+        "researchMode": { "type": "string", "enum": ["ja", "global"] },
+        "existingResources": { "type": "array" }
+      }
+    },
+    "challengeCreateInput": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "node": { "type": "object" },
+        "masteryState": { "type": "string" },
+        "pastAttempts": { "type": "array" },
+        "sources": { "type": "array" }
+      }
+    },
+    "answerGradeInput": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "challenge": { "type": "object" },
+        "rubric": { "type": "array" },
+        "sourceContext": { "type": "array" },
+        "answer": { "type": "string" },
+        "recentAttempts": { "type": "array" }
+      }
+    }
+  }
+}

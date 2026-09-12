@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://challenge-tree.local/schemas/resource.schema.json",
+  "title": "Challenge Tree Resource",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "url",
+    "language",
+    "type",
+    "authorityTier",
+    "guidance",
+    "supports"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "primary_paper",
+        "official_docs",
+        "government",
+        "university",
+        "textbook",
+        "course",
+        "technical_docs",
+        "article",
+        "video",
+        "community",
+        "other"
+      ]
+    },
+    "authorityTier": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D"]
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "section",
+            "page",
+            "heading",
+            "chapter",
+            "timestamp",
+            "fragment",
+            "other"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "guidance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "supports": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "verifiedAt": {
+      "oneOf": [
+        { "type": "string", "format": "date-time" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://challenge-tree.local/schemas/challenge-tree.schema.json",
+  "title": "Challenge Tree Save",
+  "description": "Portable local save data. JSON is data only; it must never be executed on import.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "schemaVersion",
+    "appVersion",
+    "connectorProtocolVersion",
+    "project",
+    "tree",
+    "challenges",
+    "attempts",
+    "resources",
+    "research",
+    "settings",
+    "stats",
+    "draftAnswers"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "appVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "connectorProtocolVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "project": {
+      "$ref": "https://challenge-tree.local/schemas/project.schema.json"
+    },
+    "tree": {
+      "$ref": "https://challenge-tree.local/schemas/tree.schema.json"
+    },
+    "challenges": {
+      "type": "array",
+      "items": {
+        "$ref": "https://challenge-tree.local/schemas/challenge.schema.json"
+      }
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "$ref": "https://challenge-tree.local/schemas/attempt.schema.json"
+      }
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "$ref": "https://challenge-tree.local/schemas/resource.schema.json"
+      }
+    },
+    "research": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/researchRecord"
+      }
+    },
+    "settings": {
+      "type": "object",
+      "description": "Application-owned settings; values are data and are not executed.",
+      "additionalProperties": true
+    },
+    "stats": {
+      "type": "object",
+      "description": "Derived or presentation statistics owned by the application.",
+      "additionalProperties": true
+    },
+    "draftAnswers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "researchRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "operation",
+        "status",
+        "query",
+        "mode",
+        "startedAt",
+        "completedAt",
+        "summary",
+        "resourceIds",
+        "generatedNodeIds",
+        "searches",
+        "sources",
+        "logs",
+        "unknownClaims"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "operation": { "type": "string", "enum": ["tree_propose", "node_expand", "node_create", "challenge_create", "answer_grade"] },
+        "nodeId": { "type": "string", "minLength": 1 },
+        "challengeId": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["completed", "failed"] },
+        "query": { "type": "string", "minLength": 1, "maxLength": 10000 },
+        "mode": { "type": "string", "enum": ["ja", "global"] },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 30000 },
+        "resourceIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "generatedNodeIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "searches": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "url"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "format": "uri" },
+              "query": { "type": "string" }
+            }
+          }
+        },
+        "logs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "unknownClaims": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

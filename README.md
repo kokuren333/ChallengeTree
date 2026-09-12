@@ -1,0 +1,84 @@
+# Challenge Tree
+
+Challenge Tree は、回答した内容に応じて次の学習ノードが開く、ローカルファーストの適応型学習アプリです。最初は1つのノードから始まり、回答後に次の3ノードを生成して学習を広げます。
+
+[English README](README.en.md)
+
+## 主な機能
+
+- 説明式（`explain`）：自由記述で1問に答える
+- 短答式（`short_answer`）：単語・短い句・短文で答える3問
+- 正誤式（`true_false`）：○か×だけで答える5問
+- 模範解答と解説を問題ごとに生成・表示
+- 回答履歴、採点結果、採点ログ、調査履歴を保存
+- C / B / A / S の採点とXP。1度採点したノードは完了扱い
+- ワークスペース単位のセーブデータ書き出し・読み込み
+- ノードマップのパン・ズームと、回答後の右方向への3分岐展開
+- Codex App Serverのモデル一覧取得と、モデルごとのreasoning effort選択
+
+## ローカルで動かす
+
+### Webアプリ
+
+```powershell
+npm ci
+npm run dev -- --host 127.0.0.1
+```
+
+ブラウザで表示するだけならコネクタは不要です。AIによるツリー生成・問題生成・採点には、別途Codex CLIをインストールして認証し、ローカルコネクタを起動してください。
+
+### コネクタ
+
+Node.js 18以降を使う場合は、依存関係なしで次を実行できます。
+
+```powershell
+node connector/server.js
+```
+
+Windows、macOS Intel、macOS Apple Silicon、Linux x64向けの実行ファイルは [`public/downloads/`](public/downloads/) にあります。コネクタはユーザーのCodex CLIを自動検出してApp Serverを起動します。Codex CLI自体は実行ファイルに含まれません。
+
+既定値は次の通りです。
+
+```text
+host: 127.0.0.1
+port: 43110
+```
+
+通常のGitHub Pages公開元とViteの開発ポートは既定で許可されます。別の開発元を使う場合だけ、明示的に追加します。
+
+```powershell
+$env:CHALLENGE_TREE_ALLOWED_ORIGINS = "http://127.0.0.1:5173"
+node connector/server.js
+```
+
+### AI操作と検索
+
+ツリー作成、ノード展開、問題生成、採点では、Codex自身のネイティブWeb検索の完了イベントを必須にしています。検索イベントが確認できなかった場合、結果は保存せず処理を失敗させます。コネクタ側のDuckDuckGoなどの代替検索は使用しません。
+
+検索された語句、Codexが返した出典URL、検索ログは調査履歴としてワークスペースに保存されます。問題画面に表示する「読むべきソース」は、その問題またはノードに紐づいたリソースだけです。
+
+## GitHub Pagesで公開する
+
+`vite.config.ts` は相対アセットパスを使うため、プロジェクトページ配下でも動作します。`.github/workflows/deploy.yml` は `main` へのpushまたは手動実行で、次を自動的に行います。
+
+1. 4種類のポータブルコネクタを生成
+2. Viteで静的サイトをビルド
+3. `dist` をGitHub Pagesへデプロイ
+
+リポジトリの Pages 設定で公開元に **GitHub Actions** を選択してください。公開後も、利用者は自分のPCでCodex CLIのインストール・認証とコネクタの起動を行う必要があります。
+
+## データとセキュリティ
+
+- 学習データはブラウザのIndexedDBに保存します
+- すべてのワークスペースを1つのJSONセーブデータとして書き出せます
+- コネクタはloopback（`127.0.0.1` / `::1`）だけで待ち受けます
+- セッショントークンは起動ごとに変わり、ファイルには保存しません
+- Codexの資格情報、回答本文、検索履歴をコネクタのファイルへ保存しません
+- ブラウザのOriginは明示的なallowlistで検証します
+
+## 仕様の詳細
+
+- [コネクタの使い方（日本語）](connector/README.md)
+- [Connector guide (English)](connector/README.en.md)
+- [SPEC.md](SPEC.md)
+- [GitHub Pages workflow](.github/workflows/deploy.yml)

@@ -1,0 +1,8 @@
+{
+  "name": "challenge-tree-connector",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

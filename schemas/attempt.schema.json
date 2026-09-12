@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://challenge-tree.local/schemas/attempt.schema.json",
+  "title": "Challenge Tree Attempt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "challengeId",
+    "nodeId",
+    "answer",
+    "grade",
+    "feedback",
+    "xpAwarded",
+    "createdAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "challengeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "nodeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "answer": {
+      "type": "string",
+      "maxLength": 100000
+    },
+    "grade": { "type": "string", "enum": ["C", "B", "A", "S"] },
+    "feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "correct", "missing", "misconceptions", "nuance", "nextStep"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1, "maxLength": 10000 },
+        "correct": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "missing": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "misconceptions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "nuance": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "nextStep": { "type": "string", "minLength": 1, "maxLength": 10000 },
+        "recommendedAction": { "type": "string", "enum": ["retry", "deepen", "repair", "branch"] },
+        "recommendedNodeIds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    },
+    "xpAwarded": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

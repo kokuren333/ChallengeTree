@@ -1,0 +1,121 @@
+import { z } from 'zod'
+import type { Workspace } from './types'
+
+const researchMode = z.enum(['ja', 'global'])
+const nodeStatus = z.enum(['hidden', 'unlocked', 'cleared'])
+const masteryState = z.enum(['familiar', 'developing', 'mastered'])
+const resourceType = z.enum([
+  'primary_paper', 'official_docs', 'government', 'university', 'textbook', 'course',
+  'technical_docs', 'article', 'video', 'community', 'other',
+])
+const isoDate = z.string().datetime({ offset: true })
+
+export const ProjectSchema = z.object({
+  id: z.string().min(1), title: z.string().min(1), topic: z.string().min(1), goal: z.string().min(1),
+  researchMode, challengeMode: z.enum(['explain', 'short_answer', 'true_false']).optional(),
+  curriculumContext: z.object({
+    proposalId: z.string().optional(), title: z.string(), philosophy: z.string(), learnerProfile: z.string(),
+    branches: z.array(z.string()), advantages: z.array(z.string()), tradeoffs: z.string(),
+  }).optional(),
+  createdAt: isoDate, updatedAt: isoDate,
+})
+
+export const NodeSchema = z.object({
+  id: z.string().min(1), title: z.string().min(1), description: z.string(), goal: z.string(), status: nodeStatus,
+  xp: z.number().int().nonnegative(), masteryState, prerequisites: z.array(z.string()), children: z.array(z.string()),
+  resourceIds: z.array(z.string()), challengeIds: z.array(z.string()),
+  position: z.object({ x: z.number(), y: z.number() }), createdAt: isoDate, updatedAt: isoDate,
+  archived: z.boolean().optional(),
+})
+
+export const ResourceSchema = z.object({
+  id: z.string().min(1), title: z.string().min(1), url: z.string().url().refine((value) => {
+    const protocol = new URL(value).protocol
+    return protocol === 'http:' || protocol === 'https:'
+  }, 'Only http(s) resource URLs are allowed'), language: z.string().min(1),
+  type: resourceType, authorityTier: z.enum(['A', 'B', 'C', 'D']),
+  locator: z.object({ kind: z.enum(['section', 'page', 'heading', 'chapter', 'timestamp', 'other']), value: z.string() }).optional(),
+  guidance: z.string(), supports: z.array(z.string()), verifiedAt: isoDate.optional(),
+})
+
+export const ChallengeSchema = z.object({
+  id: z.string().min(1), nodeId: z.string().min(1),
+  promptStyle: z.enum(['definition', 'why', 'mechanism', 'compare', 'scenario', 'critique', 'synthesis']),
+  difficulty: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), prompt: z.string().min(1),
+  expectedConcepts: z.array(z.string()), modelAnswer: z.string(), explanation: z.string().default(''), rubric: z.array(z.object({ criterion: z.string(), required: z.boolean() })),
+  commonMisconceptions: z.array(z.string()), resourceIds: z.array(z.string()), createdAt: isoDate,
+  mode: z.enum(['explain', 'short_answer', 'true_false']).optional(),
+  questions: z.array(z.object({ id: z.string(), prompt: z.string(), modelAnswer: z.string(), expectedConcepts: z.array(z.string()), explanation: z.string().default('') })).optional(),
+})
+
+export const GradeFeedbackSchema = z.object({
+  summary: z.string(), correct: z.array(z.string()), missing: z.array(z.string()), misconceptions: z.array(z.string()),
+  nuance: z.array(z.string()), nextStep: z.string(),
+  recommendedAction: z.enum(['retry', 'deepen', 'repair', 'branch']).optional(), recommendedNodeIds: z.array(z.string()).optional(),
+})
+
+export const AttemptSchema = z.object({
+  id: z.string().min(1), challengeId: z.string().min(1), nodeId: z.string().min(1), answer: z.string(),
+  grade: z.enum(['C', 'B', 'A', 'S']), feedback: GradeFeedbackSchema,
+  xpAwarded: z.number().int().nonnegative(), createdAt: isoDate,
+})
+
+export const TreeSchema = z.object({
+  rootNodeId: z.string().min(1), nodes: z.record(z.string(), NodeSchema),
+  edges: z.array(z.object({ from: z.string(), to: z.string(), type: z.enum(['dependency', 'recommended', 'related']) })),
+})
+
+export const ResearchSchema = z.object({
+  id: z.string().min(1), operation: z.enum(['tree_propose', 'node_expand', 'node_create', 'challenge_create', 'answer_grade']),
+  nodeId: z.string().optional(), challengeId: z.string().optional(), query: z.string(), mode: researchMode,
+  status: z.enum(['completed', 'failed']), startedAt: isoDate, completedAt: isoDate, summary: z.string(),
+  resourceIds: z.array(z.string()), generatedNodeIds: z.array(z.string()), searches: z.array(z.string()),
+  sources: z.array(z.object({ title: z.string(), url: z.string().url(), query: z.string().optional() })),
+  logs: z.array(z.string()), unknownClaims: z.array(z.string()),
+})
+
+export const WorkspaceSchema = z.object({
+  formatVersion: z.number().int().positive(), appVersion: z.string(), schemaVersion: z.number().int().positive(),
+  connectorProtocolVersion: z.string(), project: ProjectSchema, tree: TreeSchema,
+  challenges: z.array(ChallengeSchema), attempts: z.array(AttemptSchema), resources: z.array(ResourceSchema),
+  research: z.array(ResearchSchema),
+  settings: z.object({ uiLanguage: z.enum(['ja', 'en']), connectorUrl: z.string().url().refine((value) => {
+    const parsed = new URL(value)
+    return parsed.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)
+  }, 'Connector URL must point to localhost'), reducedMotion: z.boolean(), model: z.string().optional(), reasoningEffort: z.string().optional() }),
+  stats: z.object({ totalXp: z.number().int().nonnegative(), totalChallenges: z.number().int().nonnegative(), gradeDistribution: z.tuple([z.number().int().nonnegative(), z.number().int().nonnegative(), z.number().int().nonnegative(), z.number().int().nonnegative()]), sessionXp: z.number().int().nonnegative() }),
+  draftAnswers: z.record(z.string(), z.string()).default({}),
+})
+
+export const WorkspaceBundleSchema = z.object({
+  formatVersion: z.literal(2), appVersion: z.string(), schemaVersion: z.number().int().positive(),
+  connectorProtocolVersion: z.string(),
+  settings: z.object({ uiLanguage: z.enum(['ja', 'en']), connectorUrl: z.string().url().refine((value) => {
+    const parsed = new URL(value)
+    return parsed.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)
+  }, 'Connector URL must point to localhost'), reducedMotion: z.boolean(), model: z.string().optional(), reasoningEffort: z.string().optional() }),
+  workspaces: z.array(WorkspaceSchema).min(1),
+})
+
+export const GradeResponseSchema = z.object({
+  grade: z.enum(['C', 'B', 'A', 'S']), summary: z.string(), correct: z.array(z.string()),
+  missing: z.array(z.string()), misconceptions: z.array(z.string()), nuance: z.array(z.string()),
+  recommendedAction: z.enum(['retry', 'deepen', 'repair', 'branch']), recommendedNodeIds: z.array(z.string()), nextStep: z.string().optional(),
+})
+
+export const ProposalSchema = z.object({
+  id: z.string(), title: z.string(), philosophy: z.string(), learnerProfile: z.string(), branches: z.array(z.string()),
+  advantages: z.array(z.string()), tradeoffs: z.string(), root: z.record(z.string(), z.unknown()),
+  initialNodes: z.array(NodeSchema), initialEdges: z.array(z.object({ from: z.string(), to: z.string(), type: z.enum(['dependency', 'recommended', 'related']) })),
+  resources: z.array(ResourceSchema).optional(), challenges: z.array(ChallengeSchema).optional(),
+})
+
+export const ProposalResponseSchema = z.object({ proposals: z.array(ProposalSchema).length(3) })
+
+export function parseWorkspace(value: unknown): Workspace {
+  return WorkspaceSchema.parse(value) as Workspace
+}
+
+export function safeParseWorkspace(value: unknown) {
+  return WorkspaceSchema.safeParse(value)
+}

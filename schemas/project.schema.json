@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://challenge-tree.local/schemas/project.schema.json",
+  "title": "Challenge Tree Project",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "topic",
+    "goal",
+    "researchMode",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "researchMode": {
+      "type": "string",
+      "enum": ["ja", "global"]
+    },
+    "challengeMode": {
+      "type": "string",
+      "enum": ["explain", "short_answer", "true_false"]
+    },
+    "curriculumContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "philosophy", "learnerProfile", "branches", "advantages", "tradeoffs"],
+      "properties": {
+        "proposalId": { "type": "string" },
+        "title": { "type": "string" },
+        "philosophy": { "type": "string" },
+        "learnerProfile": { "type": "string" },
+        "branches": { "type": "array", "items": { "type": "string" } },
+        "advantages": { "type": "array", "items": { "type": "string" } },
+        "tradeoffs": { "type": "string" }
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
