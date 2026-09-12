@@ -112,6 +112,16 @@ legend { margin-bottom: 11px; color: var(--text); font-size: 13px; font-weight: 
 .mode-option span { display: flex; flex-direction: column; gap: 4px; }
 .mode-option strong { font-size: 13px; }
 .mode-option small, .advanced-options small, .form-note { color: var(--muted); font-size: 11px; font-weight: 400; line-height: 1.45; }
+.create-mode-picker { margin-bottom: 28px; }
+.create-mode-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.create-mode-option { min-width: 0; min-height: 70px; padding: 14px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); background: var(--surface); text-align: left; cursor: pointer; font: inherit; }
+.create-mode-option:hover { border-color: #4a5958; }
+.create-mode-option.selected { border-color: var(--teal); background: #182322; }
+.create-mode-option > span:last-child { display: flex; flex-direction: column; gap: 5px; }
+.create-mode-option strong { font-size: 13px; line-height: 1.3; }
+.create-mode-option small { color: var(--muted); font-size: 11px; font-weight: 400; line-height: 1.45; }
+.create-mode-option .mode-choice-mark { margin-top: 1px; }
+.create-mode-option.selected .mode-choice-mark { border: 5px solid var(--teal-strong); box-shadow: 0 0 0 1px var(--teal); }
 .advanced-options { padding: 14px 0 0; margin-bottom: 29px; border-top: 1px solid var(--line-soft); }
 .advanced-options summary { display: flex; flex-direction: column; gap: 4px; width: fit-content; cursor: pointer; color: var(--text); font-size: 13px; font-weight: 650; }
 .advanced-options summary::marker { color: var(--teal); }
@@ -456,6 +466,7 @@ html, body, #root { height: auto; min-height: 100%; overflow: visible; }
   .home-frame .home-content { padding-top: 55px; }
   .form-shell, .proposal-shell { max-height: none; padding-top: 30px; }
   .form-intro { margin-top: 25px; }
+  .create-mode-options { grid-template-columns: 1fr; }
 }
 
 .attempt-history details { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
