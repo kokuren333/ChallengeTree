@@ -2,6 +2,8 @@
 
 Challenge Tree is a local-first adaptive learning app. It starts with one learning node, evaluates the learner's answer, and generates the next three nodes to continue the tree.
 
+The web app is available as the [GitHub Pages version](https://kokuren333.github.io/ChallengeTree/). The page is served by GitHub Pages, while AI research, challenge generation, and grading are performed through the local connector running on the learner's own computer. In other words, the public page still uses a local-first data and Codex connection model.
+
 [日本語 README](README.md)
 
 ## Features
@@ -57,7 +59,7 @@ Tree proposals, node expansion, challenge generation, and grading require a comp
 
 The workspace research history stores the search terms, source URLs returned by Codex, and search progress logs. The source cards shown with a challenge are the resources explicitly attached to that node or challenge; they are separate from the complete search result history.
 
-## GitHub Pages deployment
+## Use and deploy the GitHub Pages version
 
 `vite.config.ts` uses relative asset paths, so the site works under a project-page path. `.github/workflows/deploy.yml` runs on pushes to `main` or manually and:
 
@@ -65,7 +67,9 @@ The workspace research history stores the search terms, source URLs returned by 
 2. Builds the Vite static site
 3. Deploys `dist` to GitHub Pages
 
-Set the repository's Pages source to **GitHub Actions**. After deployment, each user still needs Codex CLI installed and authenticated and must start the connector locally.
+The published page is [https://kokuren333.github.io/ChallengeTree/](https://kokuren333.github.io/ChallengeTree/). On first use, download and start the connector for your operating system from “How to use the connector,” then install and authenticate Codex CLI. Even when the page is opened from GitHub Pages, the connector runs locally on each learner's computer.
+
+To publish your own copy with GitHub Pages, set the repository's Pages source to **GitHub Actions**. `.github/workflows/deploy.yml` builds the site and portable connectors on pushes to `main` or manual runs.
 
 ## Data and security
 

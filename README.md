@@ -2,6 +2,8 @@
 
 Challenge Tree は、回答した内容に応じて次の学習ノードが開く、ローカルファーストの適応型学習アプリです。最初は1つのノードから始まり、回答後に次の3ノードを生成して学習を広げます。
 
+Webアプリは [GitHub Pages版](https://kokuren333.github.io/ChallengeTree/) としてそのまま利用できます。ページの配信はGitHub Pagesから行いますが、AIによる調査・問題作成・採点は、利用者のPCで起動したローカルコネクタをブラウザから呼び出します。つまり、公開ページを使っても学習データとCodexへの接続はローカルファーストの構成です。
+
 [English README](README.en.md)
 
 ## 主な機能
@@ -57,7 +59,7 @@ node connector/server.js
 
 検索された語句、Codexが返した出典URL、検索ログは調査履歴としてワークスペースに保存されます。問題画面に表示する「読むべきソース」は、その問題またはノードに紐づいたリソースだけです。
 
-## GitHub Pagesで公開する
+## GitHub Pages版を使う・公開する
 
 `vite.config.ts` は相対アセットパスを使うため、プロジェクトページ配下でも動作します。`.github/workflows/deploy.yml` は `main` へのpushまたは手動実行で、次を自動的に行います。
 
@@ -65,7 +67,9 @@ node connector/server.js
 2. Viteで静的サイトをビルド
 3. `dist` をGitHub Pagesへデプロイ
 
-リポジトリの Pages 設定で公開元に **GitHub Actions** を選択してください。公開後も、利用者は自分のPCでCodex CLIのインストール・認証とコネクタの起動を行う必要があります。
+公開済みのページは [https://kokuren333.github.io/ChallengeTree/](https://kokuren333.github.io/ChallengeTree/) です。初回利用時は、ページの「コネクタの使い方」からOSに合うコネクタをダウンロードして起動し、Codex CLIのインストール・認証を済ませてください。ページを開く場所がGitHub Pagesでも、コネクタは利用者のPC上で動作します。
+
+このリポジトリを自分のGitHub Pagesで公開する場合は、Pages設定で公開元に **GitHub Actions** を選択してください。`.github/workflows/deploy.yml` が `main` へのpushまたは手動実行でサイトと各OS向けコネクタをビルドします。
 
 ## データとセキュリティ
 
