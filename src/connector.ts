@@ -1,4 +1,4 @@
-import { GradeResponseSchema, ProposalResponseSchema, ChallengeSchema, NodeSchema, ResourceSchema } from './schemas'
+import { GradeResponseSchema, ProposalResponseSchema, ChallengeSchema, NodeCreateSchema, NodeSchema, ResourceSchema } from './schemas'
 import type { Challenge, ConnectorModel, ConnectorStatus, GradeResponse, Proposal } from './types'
 
 export interface ResearchEvidence {
@@ -85,7 +85,7 @@ export class ConnectorClient {
       const resources = Array.isArray(item?.resources) ? item.resources : []
       const challenges = Array.isArray(item?.challenges) ? item.challenges : []
       const node = item?.node
-      return node && NodeSchema.safeParse(node).success && resources.every((resource) => ResourceSchema.safeParse(resource).success) && challenges.length === 1 && challenges.every((challenge) => ChallengeSchema.safeParse(challenge).success)
+      return node && NodeCreateSchema.safeParse(node).success && resources.every((resource) => ResourceSchema.safeParse(resource).success) && challenges.length === 1 && challenges.every((challenge) => ChallengeSchema.safeParse(challenge).success)
         ? { success: true as const, data: { ...item, node, resources, challenges } } : { success: false as const, error: 'invalid' }
     }, onProgress, onResearch)
     return { node: data.node, resources: data.resources as unknown[], challenges: data.challenges as unknown[] }

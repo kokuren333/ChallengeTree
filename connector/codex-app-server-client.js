@@ -10,6 +10,11 @@ const STDERR_LIMIT = 80;
 const RESTART_LIMIT = 3;
 
 const POSITION_SCHEMA = { type: 'object', additionalProperties: false, required: ['x', 'y'], properties: { x: { type: 'number' }, y: { type: 'number' } } };
+// Node creation returns only content that Codex should author. The web app
+// owns all mutable tree state and supplies it when inserting the node.
+const NODE_CREATE_NODE_SCHEMA = { type: 'object', additionalProperties: false, required: ['id', 'title', 'description', 'goal'], properties: {
+  id: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, goal: { type: 'string' }
+} };
 const NODE_OUTPUT_SCHEMA = { type: 'object', additionalProperties: false, required: ['id', 'title', 'description', 'goal', 'status', 'xp', 'masteryState', 'prerequisites', 'children', 'resourceIds', 'challengeIds', 'position', 'createdAt', 'updatedAt', 'archived'], properties: {
   id: { type: 'string' }, title: { type: 'string' }, description: { type: 'string' }, goal: { type: 'string' }, status: { type: 'string', enum: ['hidden', 'unlocked', 'cleared'] }, xp: { type: 'integer', minimum: 0 }, masteryState: { type: 'string', enum: ['familiar', 'developing', 'mastered'] },
   prerequisites: { type: 'array', items: { type: 'string' } }, children: { type: 'array', items: { type: 'string' } }, resourceIds: { type: 'array', items: { type: 'string' } }, challengeIds: { type: 'array', items: { type: 'string' } }, position: POSITION_SCHEMA, createdAt: { type: 'string' }, updatedAt: { type: 'string' }, archived: { type: 'boolean' }
@@ -804,12 +809,12 @@ class CodexAppServerClient {
   async runNodeCreate(input, options = {}) {
     const schema = {
       type: 'object', additionalProperties: false, required: ['node', 'resources', 'challenges'], properties: {
-        node: NODE_OUTPUT_SCHEMA, resources: { type: 'array', maxItems: 8, items: RESOURCE_OUTPUT_SCHEMA },
+        node: NODE_CREATE_NODE_SCHEMA, resources: { type: 'array', maxItems: 8, items: RESOURCE_OUTPUT_SCHEMA },
         challenges: { type: 'array', minItems: 1, maxItems: 1, items: CHALLENGE_OUTPUT_SCHEMA }
       }
     };
     return this.runStructuredOperation('NODE_CREATE', input, schema,
-      'Create exactly one isolated learning node for INPUT.title. It must fit the exact project topic, goal, and curriculumContext, but must not be a child of or prerequisite for another node. It should be a focused, knowledge-based concept that can later be expanded from the learner answer. Return one answerable challenge for this node using the requested challengeMode, with concise model answers and useful explanations. Do not drift into generic orientation or unrelated themes. Use valid ISO-8601 timestamps, archived:false, and a locator plus verifiedAt for every resource.',
+      'Create exactly one isolated learning node for INPUT.title. Return node with exactly the four fields id, title, description, and goal; do not add status, xp, masteryState, prerequisites, children, resourceIds, challengeIds, position, timestamps, or archived because the app supplies those fields. It must fit the exact project topic, goal, and curriculumContext, but must not be a child of or prerequisite for another node. It should be a focused, knowledge-based concept that can later be expanded from the learner answer. Return one answerable challenge for this node using the requested challengeMode, with concise model answers and useful explanations. Do not drift into generic orientation or unrelated themes. Add a locator plus verifiedAt for every resource.',
       (value) => validateChallengeMode(value.challenges?.[0], input.challengeMode) && value, options);
   }
 

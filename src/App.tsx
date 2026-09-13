@@ -4,7 +4,7 @@ import { ConnectorClient, ConnectorError, type ResearchEvidence } from './connec
 import { applyGrade, getProgress, migrateWorkspace, migrateWorkspaceBundle } from './core'
 import { deleteWorkspace, ensureSampleWorkspace, getWorkspace, listWorkspaces, saveSnapshot, saveWorkspace, saveWorkspaces, readSettings, writeSettings } from './db'
 import { browserLanguage, t } from './i18n'
-import { ChallengeSchema, NodeSchema, ResourceSchema, WorkspaceBundleSchema } from './schemas'
+import { ChallengeSchema, NodeCreateSchema, NodeSchema, ResourceSchema, WorkspaceBundleSchema } from './schemas'
 import type { Challenge, ChallengeMode, ConnectorModel, ConnectorStatus, CurriculumContext, Edge, GradeResponse, NodeRecord, Proposal, ResearchRecord, Resource, Settings, UiLanguage, Workspace, WorkspaceBundle } from './types'
 
 type Screen = 'home' | 'create' | 'proposals' | 'tree'
@@ -336,13 +336,13 @@ export default function App() {
       let research: ResearchEvidence | null = null
       const generated = await connector.nodeCreate({ title: context.title, topic: manualForm.topic.trim(), goal: manualForm.goal.trim(), researchMode: manualForm.researchMode, challengeMode: manualForm.challengeMode, curriculumContext: context }, (message) => setGradingLog((items) => [...items, message]), (evidence) => { research = evidence })
       const now = new Date().toISOString()
-      const rawNode = NodeSchema.parse(generated.node) as NodeRecord
+      const rawNode = NodeCreateSchema.parse(generated.node)
       const rootId = rawNode.id
       const challenge = ChallengeSchema.parse(generated.challenges[0]) as Challenge
       const rootChallenge = { ...challenge, nodeId: rootId }
       const resources = generated.resources.map((item) => ResourceSchema.parse(item) as Resource)
       const rootResourceIds = rootChallenge.resourceIds.filter((id) => resources.some((item) => item.id === id))
-      const root: NodeRecord = { ...rawNode, id: rootId, status: 'unlocked', xp: 0, masteryState: 'familiar', prerequisites: [], children: [], resourceIds: rootResourceIds, challengeIds: [rootChallenge.id], position: { x: 110, y: 270 }, createdAt: rawNode.createdAt || now, updatedAt: now }
+      const root: NodeRecord = { ...rawNode, id: rootId, status: 'unlocked', xp: 0, masteryState: 'familiar', prerequisites: [], children: [], resourceIds: rootResourceIds, challengeIds: [rootChallenge.id], position: { x: 110, y: 270 }, createdAt: now, updatedAt: now }
       const next: Workspace = {
         formatVersion: 1, appVersion: '0.1.0', schemaVersion: 1, connectorProtocolVersion: '1',
         project: { id: crypto.randomUUID(), title: context.title, topic: manualForm.topic.trim(), goal: manualForm.goal.trim(), researchMode: manualForm.researchMode, challengeMode: manualForm.challengeMode, curriculumContext: context, createdAt: now, updatedAt: now },
@@ -531,7 +531,7 @@ export default function App() {
     try {
       if (!connectorStatus.connected || !connectorStatus.authenticated) throw new ConnectorError(tr('error.connector'), 'offline')
       const generated = await connector.nodeCreate({ title: title.trim(), topic: workspace.project.topic, goal: workspace.project.goal, researchMode: workspace.project.researchMode, challengeMode: workspace.project.challengeMode || 'explain', curriculumContext: workspace.project.curriculumContext, existingNodes: Object.values(workspace.tree.nodes).map((item) => ({ id: item.id, title: item.title, goal: item.goal })) }, undefined, (evidence) => { research = evidence })
-      const rawNode = NodeSchema.parse(generated.node) as NodeRecord
+      const rawNode = NodeCreateSchema.parse(generated.node)
       const resources = generated.resources.map((item) => ResourceSchema.parse(item) as Resource)
       const rawChallenge = ChallengeSchema.parse(generated.challenges[0]) as Challenge
       if ((workspaceEpochRef.current[projectId] ?? 0) !== operationEpoch) throw new ConnectorError('The learning tree was replaced or deleted while the node was being generated.', 'stale_operation')
@@ -540,7 +540,8 @@ export default function App() {
         const challengeId = latestWorkspace.challenges.some((item) => item.id === rawChallenge.id) ? `challenge-${crypto.randomUUID()}` : rawChallenge.id
         const freePosition = findFreePosition(latestWorkspace.tree.nodes, position)
         const challenge = { ...rawChallenge, id: challengeId, nodeId, resourceIds: rawChallenge.resourceIds.filter((id) => resources.some((item) => item.id === id) || latestWorkspace.resources.some((item) => item.id === id)) }
-        const node: NodeRecord = { ...rawNode, id: nodeId, status: 'unlocked', xp: 0, masteryState: 'familiar', prerequisites: [], children: [], challengeIds: [challengeId], resourceIds: challenge.resourceIds, position: freePosition, updatedAt: new Date().toISOString() }
+        const now = new Date().toISOString()
+        const node: NodeRecord = { ...rawNode, id: nodeId, status: 'unlocked', xp: 0, masteryState: 'familiar', prerequisites: [], children: [], challengeIds: [challengeId], resourceIds: challenge.resourceIds, position: freePosition, createdAt: now, updatedAt: now }
         return { ...latestWorkspace, tree: { ...latestWorkspace.tree, nodes: { ...latestWorkspace.tree.nodes, [nodeId]: node } }, challenges: [...latestWorkspace.challenges, challenge], resources: [...latestWorkspace.resources, ...resources.filter((item) => !latestWorkspace.resources.some((old) => old.id === item.id))], research: research ? [...latestWorkspace.research, researchRecord('node_create', `${latestWorkspace.project.topic} / ${title.trim()}`, latestWorkspace.project.researchMode, research, { nodeId, challengeId, resourceIds: challenge.resourceIds, generatedNodeIds: [nodeId], summary: '手動追加ノードの調査' })] : latestWorkspace.research }
       }, 'manual-node-created')
     } catch (caught) {
