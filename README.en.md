@@ -18,6 +18,12 @@ The web app is available as the [GitHub Pages version](https://kokuren333.github
 - A pannable, zoomable node map that expands three branches to the right after an answer
 - Codex App Server model catalog and per-model reasoning-effort selection
 
+## Live example
+
+This screenshot uses the Japanese UI while answering the first Transformer challenge. After an S grade, the next three nodes were expanded. It shows progress on the left, the graph in the center, and the challenge and grade review on the right.
+
+![Transformer learning tree and grade review](docs/transformer-learning-example.jpg)
+
 ## Run locally
 
 ### Web app

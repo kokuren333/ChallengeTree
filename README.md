@@ -18,6 +18,12 @@ Webアプリは [GitHub Pages版](https://kokuren333.github.io/ChallengeTree/) �
 - ノードマップのパン・ズームと、回答後の右方向への3分岐展開
 - Codex App Serverのモデル一覧取得と、モデルごとのreasoning effort選択
 
+## 実際の操作例
+
+日本語UIでTransformerスターターツリーの最初の問題に回答し、S判定後に次の3ノードを展開した例です。左に進捗、中央にノード構造、右に問題と採点結果が表示されます。
+
+![Transformerの学習ツリーと採点結果](docs/transformer-learning-example.jpg)
+
 ## ローカルで動かす
 
 ### Webアプリ
