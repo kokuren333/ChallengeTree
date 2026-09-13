@@ -280,6 +280,13 @@ legend { margin-bottom: 11px; color: var(--text); font-size: 13px; font-weight: 
 .grade-actions { display: flex; align-items: center; gap: 12px; padding-top: 17px; }
 .grade-actions .secondary-button { flex: 1; }
 .grade-actions .text-button { font-size: 11px; }
+.next-branches { padding: 13px 0 0; border-top: 1px solid var(--line-soft); }
+.next-branches h4 { margin: 0 0 8px; color: var(--faint); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
+.next-branch-list { display: grid; gap: 7px; }
+.next-branch-button { width: 100%; padding: 10px 11px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid rgba(109,181,168,.3); background: rgba(109,181,168,.05); color: var(--teal-strong); text-align: left; font: inherit; font-size: 11px; line-height: 1.4; cursor: pointer; }
+.next-branch-button:hover { border-color: var(--teal); background: rgba(109,181,168,.11); }
+.next-branch-button span { min-width: 0; }
+.next-branch-button .icon { flex: 0 0 auto; }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(7, 10, 11, .76); }
 .settings-modal { width: min(450px, 100%); padding: 23px; border: 1px solid #4a5958; border-radius: 6px; background: var(--surface-raised); box-shadow: 0 16px 48px rgba(0,0,0,.3); }
