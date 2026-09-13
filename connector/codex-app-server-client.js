@@ -286,6 +286,14 @@ function validateGradeResponse(value) {
 
 const QUESTION_COUNT_BY_MODE = { explain: 1, short_answer: 3, true_false: 5 };
 
+function normalizeTrueFalseAnswer(value) {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/[。．.!！?？]/g, '');
+  if (['true', '正しい', '正', 'yes', 'correct', '○', '〇', '◯', 'o', '1'].includes(normalized)) return 'true';
+  if (['false', '誤り', '間違い', '不正解', 'no', 'incorrect', '×', '✕', 'x', '0'].includes(normalized)) return 'false';
+  return null;
+}
+
 function validateChallengeMode(value, expectedMode) {
   if (!expectedMode) return value;
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Challenge output must be a JSON object.');
@@ -306,8 +314,17 @@ function validateChallengeMode(value, expectedMode) {
   if (value.questions.some((question) => typeof question.explanation !== 'string' || !question.explanation.trim())) {
     throw new Error('Every challenge question must include a non-empty explanation.');
   }
-  if (expectedMode === 'true_false' && value.questions.some((question) => !['true', 'false'].includes(String(question.modelAnswer).trim().toLowerCase()))) {
-    throw new Error('True/false challenge answers must be exactly true or false.');
+  if (expectedMode === 'true_false') {
+    for (const question of value.questions) {
+      const normalizedAnswer = normalizeTrueFalseAnswer(question.modelAnswer);
+      if (!normalizedAnswer) throw new Error('True/false challenge answers must be true or false.');
+      // Codex occasionally returns a localized equivalent such as 正しい or ○
+      // even though the structured schema only specifies a string. Normalize
+      // those equivalent values before the result reaches the UI and grader.
+      question.modelAnswer = normalizedAnswer;
+    }
+    const normalizedChallengeAnswer = normalizeTrueFalseAnswer(value.modelAnswer);
+    if (normalizedChallengeAnswer) value.modelAnswer = normalizedChallengeAnswer;
   }
   return value;
 }
@@ -821,7 +838,7 @@ class CodexAppServerClient {
   async runChallengeCreate(input, options = {}) {
     const schema = CHALLENGE_OUTPUT_SCHEMA;
     return this.runStructuredOperation('CHALLENGE_CREATE', input, schema,
-      'Create one answerable challenge for the exact supplied node, topic, learning goal, and curriculumContext. The curriculumContext is consistency guidance, not a reason to repeat unrelated branches. The node objective is the boundary: test only that knowledge or concept and do not turn it into a broad essay about the surrounding field. Use only supplied resource IDs. The requested challengeMode is strict. Explain mode has exactly one focused free-form prompt. short_answer has exactly three independent, lightweight questions; each must ask for one term, one value, one choice, or one short sentence and must be answerable in roughly 1–20 words. Do not ask for an explanation, discussion, comparison, analysis, justification, multi-step reasoning, or several facts in one question. true_false has exactly five unambiguous statements and each modelAnswer must be exactly true or false. Always provide a concise, non-empty modelAnswer and a useful, non-empty explanation for the challenge and for every question object, because the learner may view them before answering. Keep model answers concise in short_answer mode and make the rubric concrete enough for grading without requiring essay-level detail. Unless the node objective explicitly concerns policy, conduct, or professional development, do not create questions about institutions, rules, attitude, career, or motivation.',
+      'Create one answerable challenge for the exact supplied node, topic, learning goal, and curriculumContext. The curriculumContext is consistency guidance, not a reason to repeat unrelated branches. The node objective is the boundary: test only that knowledge or concept and do not turn it into a broad essay about the surrounding field. Use only supplied resource IDs. The requested challengeMode is strict. Explain mode has exactly one focused free-form prompt. short_answer has exactly three independent, lightweight questions; each must ask for one term, one value, one choice, or one short sentence and must be answerable in roughly 1–20 words. Do not ask for an explanation, discussion, comparison, analysis, justification, multi-step reasoning, or several facts in one question. true_false has exactly five unambiguous statements and each question modelAnswer must be the lowercase ASCII string true or false. Always provide a concise, non-empty modelAnswer and a useful, non-empty explanation for the challenge and for every question object, because the learner may view them before answering. Keep model answers concise in short_answer mode and make the rubric concrete enough for grading without requiring essay-level detail. Unless the node objective explicitly concerns policy, conduct, or professional development, do not create questions about institutions, rules, attitude, career, or motivation.',
       (value) => validateChallengeMode(value, input.challengeMode), options);
   }
 
