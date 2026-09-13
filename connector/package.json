@@ -1,6 +1,7 @@
 {
   "name": "challenge-tree-connector",
   "private": true,
+  "license": "MIT",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js"

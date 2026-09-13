@@ -82,3 +82,7 @@ node connector/server.js
 - [Connector guide (English)](connector/README.en.md)
 - [SPEC.md](SPEC.md)
 - [GitHub Pages workflow](.github/workflows/deploy.yml)
+
+## ライセンス
+
+このプロジェクトは [MIT License](LICENSE) で公開しています。

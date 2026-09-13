@@ -82,3 +82,7 @@ Set the repository's Pages source to **GitHub Actions**. After deployment, each 
 - [コネクタの使い方（日本語）](connector/README.md)
 - [SPEC.md](SPEC.md)
 - [GitHub Pages workflow](.github/workflows/deploy.yml)
+
+## License
+
+This project is released under the [MIT License](LICENSE).
