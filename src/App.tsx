@@ -16,6 +16,9 @@ const projectNodeKey = (projectId: string, nodeId: string) => `${projectId}:${no
 const NODE_WIDTH = 184
 const NODE_HEIGHT = 76
 const NODE_GAP = 24
+const LAYOUT_COLUMN_GAP = 126
+const LAYOUT_ROW_GAP = 86
+const LAYOUT_TOP = 20
 
 const DEFAULT_SETTINGS: Settings = { uiLanguage: browserLanguage(), connectorUrl: 'http://127.0.0.1:43110', reducedMotion: false, model: 'gpt-5.6-luna', reasoningEffort: 'low' }
 
@@ -38,6 +41,39 @@ function findFreePosition(nodes: Record<string, NodeRecord>, preferred: { x: num
       if (!occupied.some((position) => rectanglesOverlap(position, candidate))) return candidate
     }
   }
+}
+
+function getTreeLayout(tree: Workspace['tree']): Record<string, { x: number; y: number }> {
+  const visibleNodes = Object.values(tree.nodes).filter((node) => !node.archived && node.status !== 'hidden')
+  const visibleIds = new Set(visibleNodes.map((node) => node.id))
+  const children = new Map<string, string[]>()
+  for (const node of visibleNodes) {
+    const linkedChildren = node.children.filter((id) => visibleIds.has(id))
+    const prerequisiteChildren = visibleNodes.filter((candidate) => candidate.prerequisites.includes(node.id)).map((candidate) => candidate.id)
+    children.set(node.id, [...new Set([...linkedChildren, ...prerequisiteChildren])])
+  }
+  const roots = visibleNodes.filter((node) => !node.prerequisites.some((id) => visibleIds.has(id))).sort((left, right) => {
+    if (left.id === tree.rootNodeId) return -1
+    if (right.id === tree.rootNodeId) return 1
+    return left.position.y - right.position.y
+  })
+  const positions: Record<string, { x: number; y: number }> = {}
+  const active = new Set<string>()
+  let leafIndex = 0
+  const visit = (id: string, depth: number): number => {
+    if (positions[id]) return positions[id].y
+    if (active.has(id)) return LAYOUT_TOP + leafIndex++ * LAYOUT_ROW_GAP
+    active.add(id)
+    const childIds = children.get(id) || []
+    const childYs = childIds.map((childId) => visit(childId, depth + 1))
+    const y = childYs.length ? childYs.reduce((sum, value) => sum + value, 0) / childYs.length : LAYOUT_TOP + leafIndex++ * LAYOUT_ROW_GAP
+    positions[id] = { x: 70 + depth * (NODE_WIDTH + LAYOUT_COLUMN_GAP), y }
+    active.delete(id)
+    return y
+  }
+  roots.forEach((node) => visit(node.id, 0))
+  visibleNodes.filter((node) => !positions[node.id]).sort((left, right) => left.position.y - right.position.y).forEach((node) => visit(node.id, 0))
+  return positions
 }
 
 function proposalContext(proposal: Proposal): CurriculumContext {
@@ -703,7 +739,8 @@ function ZoomableMap({ workspace, selectedNodeId, setSelectedNodeId, matchedIds,
   const [manualTitle, setManualTitle] = useState('')
   const [manualBusy, setManualBusy] = useState(false)
   const visibleNodes = Object.values(workspace.tree.nodes).filter((node) => !node.archived && node.status !== 'hidden' && (!matchedIds || matchedIds.has(node.id)))
-  const point = (id: string) => workspace.tree.nodes[id]?.position ?? { x: 100, y: 100 }
+  const layoutPositions = getTreeLayout(workspace.tree)
+  const point = (id: string) => layoutPositions[id] ?? workspace.tree.nodes[id]?.position ?? { x: 100, y: 100 }
   const updateZoom = (delta: number) => setZoom((value) => Math.max(.55, Math.min(2.2, Number((value + delta).toFixed(2)))))
   const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -730,16 +767,16 @@ function ZoomableMap({ workspace, selectedNodeId, setSelectedNodeId, matchedIds,
     setManualPosition({ x: (x - pan.x) / zoom, y: (y - pan.y) / zoom })
     setManualTitle('')
   }
-  return <><div className="map-surface" onContextMenu={handleContextMenu} onWheel={handleWheel} onPointerDown={handlePointerDown} onPointerMove={(event) => { if (!dragging) return; setPan((value) => ({ x: value.x + event.clientX - lastPoint.x, y: value.y + event.clientY - lastPoint.y })); setLastPoint({ x: event.clientX, y: event.clientY }) }} onPointerUp={() => setDragging(false)} onPointerCancel={() => setDragging(false)}><div className="map-controls" onPointerDown={(event) => event.stopPropagation()}><button type="button" onClick={() => updateZoom(.1)} aria-label="拡大">＋</button><span>{Math.round(zoom * 100)}%</span><button type="button" onClick={() => updateZoom(-.1)} aria-label="縮小">−</button><button type="button" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }} aria-label="表示をリセット">↺</button></div><svg viewBox="0 0 1600 620" role="img" aria-label={tr('tree.eyebrow')}><defs><pattern id="grid-zoom" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(169,184,182,.06)" strokeWidth="1" /></pattern></defs><rect width="1600" height="620" fill="url(#grid-zoom)" /><g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>{workspace.tree.edges.map((edge) => { const from = point(edge.from); const to = point(edge.to); const visible = visibleNodes.some((item) => item.id === edge.from) && visibleNodes.some((item) => item.id === edge.to); return <line key={`${edge.from}-${edge.to}`} className={`tree-edge ${visible ? '' : 'edge-hidden'}`} x1={from.x + 92} y1={from.y + 38} x2={to.x + 10} y2={to.y + 38} /> })}{visibleNodes.map((node) => <MapNode key={node.id} node={node} selected={node.id === selectedNodeId} tr={tr} onSelect={() => setSelectedNodeId(node.id)} />)}</g></svg>{visibleNodes.length === 0 && <div className="map-empty">{tr('tree.searchEmpty')}</div>}</div>{manualPosition && <div className="manual-node-backdrop" role="presentation"><section className="manual-node-dialog" role="dialog" aria-modal="true"><h2>{tr('tree.manualNodeTitle')}</h2><p>{tr('tree.manualNodeHint')}</p><input autoFocus value={manualTitle} onChange={(event) => setManualTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && manualTitle.trim()) { event.preventDefault(); setManualBusy(true); void onManualNode(manualTitle, manualPosition).finally(() => { setManualBusy(false); setManualPosition(null) }) } }} /><div className="modal-actions"><button className="secondary-button" disabled={manualBusy} onClick={() => setManualPosition(null)}>{tr('create.cancel')}</button><button className="primary-button" disabled={manualBusy || !manualTitle.trim()} onClick={() => { setManualBusy(true); void onManualNode(manualTitle, manualPosition).finally(() => { setManualBusy(false); setManualPosition(null) }) }}>{manualBusy ? tr('node.saving') : tr('tree.manualNodeCreate')}</button></div></section></div>}</>
+  return <><div className="map-surface" onContextMenu={handleContextMenu} onWheel={handleWheel} onPointerDown={handlePointerDown} onPointerMove={(event) => { if (!dragging) return; setPan((value) => ({ x: value.x + event.clientX - lastPoint.x, y: value.y + event.clientY - lastPoint.y })); setLastPoint({ x: event.clientX, y: event.clientY }) }} onPointerUp={() => setDragging(false)} onPointerCancel={() => setDragging(false)}><div className="map-controls" onPointerDown={(event) => event.stopPropagation()}><button type="button" onClick={() => updateZoom(.1)} aria-label="拡大">＋</button><span>{Math.round(zoom * 100)}%</span><button type="button" onClick={() => updateZoom(-.1)} aria-label="縮小">−</button><button type="button" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }} aria-label="表示をリセット">↺</button></div><svg viewBox="0 0 1600 620" role="img" aria-label={tr('tree.eyebrow')}><defs><pattern id="grid-zoom" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(169,184,182,.06)" strokeWidth="1" /></pattern></defs><rect width="1600" height="620" fill="url(#grid-zoom)" /><g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>{workspace.tree.edges.map((edge) => { const from = point(edge.from); const to = point(edge.to); const visible = visibleNodes.some((item) => item.id === edge.from) && visibleNodes.some((item) => item.id === edge.to); return <line key={`${edge.from}-${edge.to}`} className={`tree-edge ${visible ? '' : 'edge-hidden'}`} x1={from.x + 92} y1={from.y + 38} x2={to.x + 10} y2={to.y + 38} /> })}{visibleNodes.map((node) => <MapNode key={node.id} node={node} position={point(node.id)} selected={node.id === selectedNodeId} tr={tr} onSelect={() => setSelectedNodeId(node.id)} />)}</g></svg>{visibleNodes.length === 0 && <div className="map-empty">{tr('tree.searchEmpty')}</div>}</div>{manualPosition && <div className="manual-node-backdrop" role="presentation"><section className="manual-node-dialog" role="dialog" aria-modal="true"><h2>{tr('tree.manualNodeTitle')}</h2><p>{tr('tree.manualNodeHint')}</p><input autoFocus value={manualTitle} onChange={(event) => setManualTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && manualTitle.trim()) { event.preventDefault(); setManualBusy(true); void onManualNode(manualTitle, manualPosition).finally(() => { setManualBusy(false); setManualPosition(null) }) } }} /><div className="modal-actions"><button className="secondary-button" disabled={manualBusy} onClick={() => setManualPosition(null)}>{tr('create.cancel')}</button><button className="primary-button" disabled={manualBusy || !manualTitle.trim()} onClick={() => { setManualBusy(true); void onManualNode(manualTitle, manualPosition).finally(() => { setManualBusy(false); setManualPosition(null) }) }}>{manualBusy ? tr('node.saving') : tr('tree.manualNodeCreate')}</button></div></section></div>}</>
 }
 
-function MapNode({ node, selected, tr, onSelect }: { node: NodeRecord; selected: boolean; tr: (key: string, vars?: Record<string, string | number>) => string; onSelect: () => void }) {
+function MapNode({ node, position, selected, tr, onSelect }: { node: NodeRecord; position: { x: number; y: number }; selected: boolean; tr: (key: string, vars?: Record<string, string | number>) => string; onSelect: () => void }) {
   const completed = node.status === 'cleared'
   const statusKey = selected ? 'current' : completed ? 'completed' : 'incomplete'
   const label = tr(`tree.${statusKey}`)
   const xp = completed ? Math.min(node.xp, 100) : 0
   const handleKey = (event: KeyboardEvent<SVGGElement>) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect() } }
-  return <g className={`map-node state-${statusKey} ${selected ? 'selected' : ''}`} transform={`translate(${node.position.x}, ${node.position.y})`} onClick={onSelect} onKeyDown={handleKey} tabIndex={0} role="button" aria-label={`${node.title}, ${label}`}><rect className="node-back" width="184" height="76" rx="4" />{node.status === 'cleared' && <path className={node.masteryState === 'mastered' ? 'node-crown' : 'node-check'} d={node.masteryState === 'mastered' ? 'M14 38l3-6 4 4 4-6 4 8' : 'M14 38l4 4 8-9'} />}{node.status === 'unlocked' && <circle cx="20" cy="38" r="3" className="node-dot" />}<foreignObject x="40" y="10" width="136" height="42"><div className="node-title-wrap">{node.title}</div></foreignObject><text className="node-state" x="40" y="64">{label} · {xp} XP</text></g>
+  return <g className={`map-node state-${statusKey} ${selected ? 'selected' : ''}`} transform={`translate(${position.x}, ${position.y})`} onClick={onSelect} onKeyDown={handleKey} tabIndex={0} role="button" aria-label={`${node.title}, ${label}`}><rect className="node-back" width="184" height="76" rx="4" />{node.status === 'cleared' && <path className={node.masteryState === 'mastered' ? 'node-crown' : 'node-check'} d={node.masteryState === 'mastered' ? 'M14 38l3-6 4 4 4-6 4 8' : 'M14 38l4 4 8-9'} />}{node.status === 'unlocked' && <circle cx="20" cy="38" r="3" className="node-dot" />}<foreignObject x="40" y="10" width="136" height="42"><div className="node-title-wrap">{node.title}</div></foreignObject><text className="node-state" x="40" y="64">{label} · {xp} XP</text></g>
 }
 
 function NodePanel({ workspace, node, tr, connectorStatus, busy, gradingLog, lastGrade, onDraft, onCreateChallenge, onSubmit, onExpand, onRetry, onOpenNode }: { workspace: Workspace; node: NodeRecord; tr: (key: string, vars?: Record<string, number | string>) => string; connectorStatus: ConnectorStatus; busy: string; gradingLog: string[]; lastGrade: LastGrade | null; onDraft: (id: string, answer: string) => Promise<void>; onCreateChallenge: (node: NodeRecord) => Promise<void>; onSubmit: (node: NodeRecord, challenge: Challenge, answer: string) => Promise<void>; onExpand: (node: NodeRecord, branchCount?: number) => Promise<void>; onRetry: () => void; onOpenNode: (id: string) => void }) {
