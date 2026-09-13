@@ -527,6 +527,7 @@ export default function App() {
     const operationEpoch = workspaceEpochRef.current[projectId] ?? 0
     const operationId = `manual-${crypto.randomUUID()}`
     let research: ResearchEvidence | null = null
+    let createdNodeId: string | null = null
     setNodeOperation(projectId, operationId, 'manual-create'); setError('')
     try {
       if (!connectorStatus.connected || !connectorStatus.authenticated) throw new ConnectorError(tr('error.connector'), 'offline')
@@ -538,12 +539,14 @@ export default function App() {
       await persistProject(projectId, (latestWorkspace) => {
         const nodeId = latestWorkspace.tree.nodes[rawNode.id] ? `node-${crypto.randomUUID()}` : rawNode.id
         const challengeId = latestWorkspace.challenges.some((item) => item.id === rawChallenge.id) ? `challenge-${crypto.randomUUID()}` : rawChallenge.id
+        createdNodeId = nodeId
         const freePosition = findFreePosition(latestWorkspace.tree.nodes, position)
         const challenge = { ...rawChallenge, id: challengeId, nodeId, resourceIds: rawChallenge.resourceIds.filter((id) => resources.some((item) => item.id === id) || latestWorkspace.resources.some((item) => item.id === id)) }
         const now = new Date().toISOString()
         const node: NodeRecord = { ...rawNode, id: nodeId, status: 'unlocked', xp: 0, masteryState: 'familiar', prerequisites: [], children: [], challengeIds: [challengeId], resourceIds: challenge.resourceIds, position: freePosition, createdAt: now, updatedAt: now }
         return { ...latestWorkspace, tree: { ...latestWorkspace.tree, nodes: { ...latestWorkspace.tree.nodes, [nodeId]: node } }, challenges: [...latestWorkspace.challenges, challenge], resources: [...latestWorkspace.resources, ...resources.filter((item) => !latestWorkspace.resources.some((old) => old.id === item.id))], research: research ? [...latestWorkspace.research, researchRecord('node_create', `${latestWorkspace.project.topic} / ${title.trim()}`, latestWorkspace.project.researchMode, research, { nodeId, challengeId, resourceIds: challenge.resourceIds, generatedNodeIds: [nodeId], summary: '手動追加ノードの調査' })] : latestWorkspace.research }
       }, 'manual-node-created')
+      if (createdNodeId && isCurrentProject(projectId)) setSelectedNodeId(createdNodeId)
     } catch (caught) {
       if (isCurrentProject(projectId)) setError(caught instanceof ConnectorError && caught.code === 'invalid_output' ? tr('error.invalidOutput') : caught instanceof Error ? caught.message : tr('error.generic'))
     } finally { setNodeOperation(projectId, operationId, null) }
