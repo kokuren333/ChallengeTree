@@ -90,7 +90,6 @@ To publish your own copy with GitHub Pages, set the repository's Pages source to
 
 - [Connector guide (English)](connector/README.en.md)
 - [コネクタの使い方（日本語）](connector/README.md)
-- [SPEC.md](SPEC.md)
 - [GitHub Pages workflow](.github/workflows/deploy.yml)
 
 ## License

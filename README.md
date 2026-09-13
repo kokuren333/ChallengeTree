@@ -90,7 +90,6 @@ node connector/server.js
 
 - [コネクタの使い方（日本語）](connector/README.md)
 - [Connector guide (English)](connector/README.en.md)
-- [SPEC.md](SPEC.md)
 - [GitHub Pages workflow](.github/workflows/deploy.yml)
 
 ## ライセンス
